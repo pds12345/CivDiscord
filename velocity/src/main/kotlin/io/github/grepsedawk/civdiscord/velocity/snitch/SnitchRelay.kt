@@ -88,6 +88,7 @@ class SnitchRelay(
             "ENTER" -> "hit"
             "LOGIN" -> "login"
             "LOGOUT" -> "logout"
+            "PROTECTION_LOST" -> "protection lost"
             else -> MarkdownSafe.text(hit.kind.lowercase())
         }
         val intruder = MarkdownSafe.code(hit.intruderName?.takeIf { it.isNotBlank() } ?: hit.intruderUuid)

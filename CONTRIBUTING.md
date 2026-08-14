@@ -7,11 +7,11 @@ Thanks for your interest. This document covers what you need to know to land a c
 CivDiscord pins its JDK and build tools via [mise](https://mise.jdx.dev/). After cloning:
 
 ```bash
-mise install                 # installs the pinned JDK (Java 21)
+mise install                 # installs the pinned JDK (Java 25)
 mise exec -- ./gradlew tasks # verify Gradle works
 ```
 
-If you prefer not to use mise, install Temurin (or any OpenJDK) 21 yourself and drop the `mise exec --` prefix from the commands below.
+If you prefer not to use mise, install Temurin (or any OpenJDK) 25 yourself and drop the `mise exec --` prefix from the commands below.
 
 ## Running tests
 

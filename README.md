@@ -263,7 +263,7 @@ mise exec -- ./gradlew :velocity:shadowJar :paper:shadowJar
 #         paper/build/libs/CivDiscord-Paper-*.jar
 ```
 
-Requires Java 21 (pinned via `mise.toml`).
+Requires Java 25 (pinned via `mise.toml`).
 
 ## Architecture
 
