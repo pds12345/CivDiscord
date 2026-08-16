@@ -11,6 +11,7 @@ import io.github.grepsedawk.civdiscord.paper.chat.RemoteGroupDelivery
 import io.github.grepsedawk.civdiscord.paper.config.Config
 import io.github.grepsedawk.civdiscord.paper.config.ConfigLoader
 import io.github.grepsedawk.civdiscord.paper.console.ConsoleExecutor
+import io.github.grepsedawk.civdiscord.paper.jukealert.ProtectionLostListener
 import io.github.grepsedawk.civdiscord.paper.jukealert.SnitchListener
 import io.github.grepsedawk.civdiscord.paper.linker.DiscordCommand
 import io.github.grepsedawk.civdiscord.paper.linker.buildLinkMessage
@@ -146,14 +147,21 @@ class CivDiscordPaperPlugin :
         )
 
         server.pluginManager.registerEvents(this, this)
-        server.pluginManager.registerEvents(
-            SnitchListener(
-                serverName = this.serverConfig.serverName,
-                send = { bridge.send(it) },
-                scheduleLogin = { task -> server.scheduler.runTaskLater(this, task, LOGIN_DISPATCH_DELAY_TICKS) },
-            ),
-            this,
+        val snitchListener = SnitchListener(
+            serverName = this.serverConfig.serverName,
+            send = { bridge.send(it) },
+            scheduleLogin = { task -> server.scheduler.runTaskLater(this, task, LOGIN_DISPATCH_DELAY_TICKS) },
         )
+        server.pluginManager.registerEvents(snitchListener, this)
+
+        // SnitchProtectionLostEvent only exists on JukeAlert builds that carry it. Registering a
+        // listener for a missing event class throws, so check before reaching for it and leave the
+        // ordinary snitch alerts above untouched when it isn't there.
+        runCatching { Class.forName("com.untamedears.jukealert.events.SnitchProtectionLostEvent") }
+            .onSuccess { server.pluginManager.registerEvents(ProtectionLostListener(snitchListener), this) }
+            .onFailure {
+                logger.info("JukeAlert has no SnitchProtectionLostEvent; protection-loss snitch alerts disabled")
+            }
 
         val discordCmd = DiscordCommand(
             send = { bridge.send(it) },

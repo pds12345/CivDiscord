@@ -23,7 +23,13 @@ class SnitchListener(
     private val scheduleLogin: (Runnable) -> Unit = { it.run() },
 ) : Listener {
 
-    enum class Kind { ENTER, LOGIN, LOGOUT }
+    // PROTECTION_LOST is not a player tripping a snitch but a snitch's field shrinking under one.
+    // Only civnodes' node snitches, whose field is the chunks their node protects, can produce it;
+    // see ProtectionLostListener.
+    enum class Kind { ENTER, LOGIN, LOGOUT, PROTECTION_LOST }
+
+    /** A block position to report an alert at, when it isn't the snitch's own. See [handle]. */
+    data class BlockPos(val x: Int, val y: Int, val z: Int)
 
     data class SnitchSummary(
         val name: String,
@@ -60,13 +66,13 @@ class SnitchListener(
         )
     }
 
-    internal fun dispatch(player: Player, summary: SnitchSummary, kind: Kind) {
+    internal fun dispatch(player: Player, summary: SnitchSummary, kind: Kind, at: BlockPos? = null) {
         report(
             intruderUuid = player.uniqueId.toString(),
             ownerUuid = summary.ownerUuid,
-            x = summary.x,
-            y = summary.y,
-            z = summary.z,
+            x = at?.x ?: summary.x,
+            y = at?.y ?: summary.y,
+            z = at?.z ?: summary.z,
             snitchName = summary.name,
             namelayerGroup = summary.namelayerGroup,
             kind = kind,
@@ -98,7 +104,13 @@ class SnitchListener(
             .onFailure { logger.warn("SnitchListener.{} threw — Bukkit would have swallowed this", "LOGOUT", it) }
     }
 
-    internal fun handle(snitch: Snitch?, player: Player?, kind: Kind) {
+    /**
+     * @param at Where to report the alert, when that isn't the snitch's own block. Null for the
+     *   snitch itself, which is right for every kind where a player came to the snitch. For
+     *   [Kind.PROTECTION_LOST] the snitch has not moved and where its boundary went is the whole
+     *   point of the alert, so that listener passes the chunk that fell out of the field.
+     */
+    internal fun handle(snitch: Snitch?, player: Player?, kind: Kind, at: BlockPos? = null) {
         if (snitch == null) {
             logger.warn(
                 "SnitchListener.{}: event.snitch was null — JukeAlert dispatched event with no snitch reference",
@@ -134,7 +146,7 @@ class SnitchListener(
             player.name,
             player.uniqueId,
         )
-        dispatch(player, summary, kind)
+        dispatch(player, summary, kind, at)
     }
 
     private fun summarize(snitch: Snitch): SnitchSummary {

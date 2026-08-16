@@ -163,6 +163,20 @@ class SnitchRelayTest {
     }
 
     @Test
+    fun `PROTECTION_LOST renders as protection lost`() {
+        val (relay, dao, sent) = fixture()
+        dao.bind(100L, 1001L, "townhall", isWriter = true, showSnitches = false, createdBy = 1L)
+        dao.setShowSnitches(1001L, "townhall", true)
+
+        relay.dispatch(hit(kind = "PROTECTION_LOST"))
+
+        sent.size shouldBe 1
+        sent[0].body.contains("[protection lost]") shouldBe true
+        // the underscored enum name must not leak through as the fallback would render it
+        sent[0].body.contains("protection_lost") shouldBe false
+    }
+
+    @Test
     fun `escapes markdown in snitch name`() {
         val (relay, dao, sent) = fixture()
         dao.bind(100L, 1001L, "townhall", isWriter = true, showSnitches = false, createdBy = 1L)
